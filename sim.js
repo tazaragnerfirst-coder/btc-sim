@@ -14,4 +14,6 @@ for(let i=n;i<N;i++){const x=p[i],dv=(pr/x-1)*100,X=sa[i]*100,sg=dv>=X?1:dv<=-X?
 if(sg){if(side==0)en(i,x,sg,dv,"in");else if(side==sg){if(ent.length<3)en(i,x,sg,dv,"add")}else{ex(i,x,dv);en(i,x,sg,dv,"in")}pr=x;rl="previous signal"}
 out[i]=bal+(side?fl(x)-xf(x):0);rec[i]=side*ent.length}
 return{out,rec,ev,eq:bal,side,ent,pr,rl}};
-SIM.series=(K,d)=>{const pf=K.map(x=>x.c);pf[SIM.VW+199]=d.p0;const p=pf.slice(SIM.VW),sa=new Array(p.length).fill(d.X/100);return{p,sa,...SIM.run(p,sa,d.amt)}};
+// x% is computed, never typed: x = round-trip fee + round-trip gap (bid/ask spread) + recent volatility (avg move per bar over the last 168 bars)
+SIM.sa=(v,gap)=>v.map(x=>2*SIM.F+2*gap+x);
+SIM.series=(K,d)=>{const pf=K.map(x=>x.c);pf[SIM.VW+199]=d.p0;const p=pf.slice(SIM.VW),sa=SIM.sa(SIM.vol(pf).slice(SIM.VW),d.gap||0);return{p,sa,...SIM.run(p,sa,d.amt)}};

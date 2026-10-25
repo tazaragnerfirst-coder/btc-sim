@@ -12,7 +12,7 @@ function tbl(){const jo=R.ev.map(x=>x.k).lastIndexOf("out"),rows=R.ev.map((e,j)=
 const ty=e.k=="out"?"Close "+(e.side>0?"long (sell ":"short (buy back ")+q4(e.q)+" BTC)":(e.side>0?"Buy":"Sell short")+(e.n>1?" step "+e.n:"")+" · "+q4(e.q)+" BTC";
 return `<tr><td>${t}</td><td>${ty}</td><td>${f(e.x)}</td><td>V ${sg(e.dv)}% (price ${sg(e.pct)}% vs ${e.rl} ${f(e.ref)})</td>${res(e,j,jo)}</tr>`}).reverse().join("");
 $("tr").innerHTML="<tr><th>Time (UTC)</th><th>Action</th><th>Price</th><th>Move that triggered it</th><th>Result</th></tr>"+(rows||"<tr><td colspan=5 class=m>No trades yet.</td></tr>")}
-function panel(){if(!R)return;const A=d.amt,X=R.sa[R.sa.length-1]*100,lp=live||K[K.length-1].c,L=R.side>0,op=R.side?R.ent.reduce((a,e)=>a+A/e*(L?lp-e:e-lp),0)-SIM.F*A*R.ent.reduce((a,e)=>a+lp/e,0):0,qt=R.ent.reduce((a,e)=>a+A/e,0),W=R.ev.filter(e=>e.k=="out"&&e.pnl>=0).length,Ls=R.ev.filter(e=>e.k=="out"&&e.pnl<0).length,val=R.eq+op,pl=val-A,pc=x=>sg((x/lp-1)*100)+"%";
+function panel(){if(!R)return;const A=d.amt,X=R.sa[R.sa.length-1]*100,fe=2*SIM.F*100,gp=2*(d.gap||0)*100,vl=X-fe-gp,lp=live||K[K.length-1].c,L=R.side>0,op=R.side?R.ent.reduce((a,e)=>a+A/e*(L?lp-e:e-lp),0)-SIM.F*A*R.ent.reduce((a,e)=>a+lp/e,0):0,qt=R.ent.reduce((a,e)=>a+A/e,0),W=R.ev.filter(e=>e.k=="out"&&e.pnl>=0).length,Ls=R.ev.filter(e=>e.k=="out"&&e.pnl<0).length,val=R.eq+op,pl=val-A,pc=x=>sg((x/lp-1)*100)+"%";
 const pr=R.pr,Vp=A/pr,Vn=A/lp,dv=(pr/lp-1)*100,lg=pr/(1+X/100),st=pr/(1-X/100),n=R.ent.length;
 PL.forEach(l=>cs.removePriceLine(l));PL=[];const ln=(p,t,c)=>PL.push(cs.createPriceLine({price:p,color:c,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:t}));
 ln(lg,"LONG","#2ebd85");ln(st,"SHORT","#f6465d");if(R.side)ln(R.ent.reduce((q,e)=>q+e,0)/n,"ENTRY, P/L "+sg(op)+" USDT",op>=0?"#2ebd85":"#f6465d");
@@ -32,5 +32,5 @@ ${R.ent.map((e,i)=>`<p><span class="m">Step ${i+1}: ${q4(A/e)} BTC at</span>${f(
 <p><span class="m">Closed trades</span>${sg(R.eq-A)}</p><p><span class="m">Open position</span><b class="${cl(op)}">${sg(op)}</b></p>
 <p><span class="m">Winning / losing trades</span><b><span class="g">${W}</span> / <span class="r">${Ls}</span></b></p>
 <p><span class="m">Just holding BTC</span>${f(A*lp/d.p0)}</p>
-<p class="m">Rule: V = amount ÷ BTC price. V up ${f(X)}% from the previous signal = LONG, V down ${f(X)}% = SHORT; the reference resets at every signal. x% is the fixed value you entered. Decisions use closed ${d.iv} bars. Fee 0.1% included, slippage and funding not. Not backtested.</p>`;
+<p class="m">Rule: V = amount ÷ BTC price. V up ${f(X)}% from the previous signal = LONG, V down ${f(X)}% = SHORT; the reference resets at every signal. x% is calculated, not typed: fee ${f(fe)}% + gap ${f(gp,4)}% + volatility ${f(vl)}% = ${f(X)}% (round trip fee and gap, plus the average move per bar). Decisions use closed ${d.iv} bars. Fee 0.1% included, slippage and funding not. Not backtested.</p>`;
 tbl();say(`Running since ${new Date(d.sh).toISOString().slice(5,16).replace("T"," ")} UTC. Updates about every 2 seconds. ${R.ev.length} trade events so far.`)}
