@@ -17,6 +17,7 @@ section{padding:12px;overflow-x:auto}table{width:100%;border-collapse:collapse;m
 @media(max-width:800px){main{grid-template-columns:1fr}}
 </style></head><body>
 <header><b>INTER/BTC ratio simulator</b><a href="index.html">BTC sim</a>
+<select id="ex" aria-label="Exchange"><option value="auto">Auto exchange</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="bybit">Bybit</option></select>
 <select id="iv" aria-label="Timeframe"><option>1m</option><option>5m</option><option>15m</option><option>1h</option></select>
 <input id="x" type="number" value="2" min="0.05" step="0.05" aria-label="x percent"><span class="m">x %</span>
 <input id="amt" type="number" value="100" min="1" aria-label="Start amount"><span class="m">USDT</span>
@@ -35,10 +36,11 @@ const ch=LightweightCharts.createChart($("c"),opt),ch2=LightweightCharts.createC
 const cs=ch.addCandlestickSeries({upColor:"#2ebd85",downColor:"#f6465d",borderVisible:false,wickUpColor:"#2ebd85",wickDownColor:"#f6465d",priceFormat:{type:"price",precision:5,minMove:0.00001}});
 const rl=ch2.addLineSeries({color:"#f0b90b",lineWidth:2,priceLineVisible:false,priceFormat:{type:"custom",formatter:x=>x.toExponential(3),minMove:1e-12}});
 async function start(){const amt=+$("amt").value,X=+$("x").value;if(!(amt>0&&X>0))return say("Enter an amount and x% above zero.");
-say("Reading INTER and BTC prices from Bybit...");try{const [a,b]=await Promise.all([INT.price("INTERUSDT"),INT.price("BTCUSDT")]);
-d={iv:$("iv").value,X,amt,ts:Date.now(),pi0:a,pb0:b};localStorage[LS]=JSON.stringify(d);go()}catch(e){say("Could not reach Bybit ("+e+"). Check the connection and press Start again.")}}
-async function go(){d=d||JSON.parse(localStorage[LS]);$("iv").value=d.iv;$("x").value=d.X;$("amt").value=d.amt;["iv","x","amt","go"].forEach(i=>$(i).disabled=true);
-try{await load();if(timer)clearInterval(timer);timer=setInterval(tick,3000)}catch(e){say("Could not load data from Bybit ("+e+"). Reload the page to retry.")}}
+say("Reading INTER and BTC prices...");const sel=$("ex").value,r=await INT.detect(sel=="auto"?["mexc","gate","bybit"]:[sel]);
+if(!r.ex)return say("No exchange returned both INTER and BTC prices. "+r.errs.join(" | "));
+d={iv:$("iv").value,X,amt,ts:Date.now(),pi0:r.pi,pb0:r.pb,ex:r.ex};localStorage[LS]=JSON.stringify(d);go()}
+async function go(){d=d||JSON.parse(localStorage[LS]);INT.ex=d.ex||"mexc";$("ex").value=d.ex||"mexc";$("iv").value=d.iv;$("x").value=d.X;$("amt").value=d.amt;["ex","iv","x","amt","go"].forEach(i=>$(i).disabled=true);
+try{await load();if(timer)clearInterval(timer);timer=setInterval(tick,3000)}catch(e){say("Could not load data from "+INT.V[INT.ex].name+" ("+e+"). Reload the page to retry.")}}
 async function load(){if(loading)return;loading=true;try{const ms=INT.IV[d.iv][1],first=Math.ceil(d.ts/ms)*ms,from=first-40*ms;
 const [a,b]=await Promise.all([INT.klines("INTERUSDT",d.iv,from),INT.klines("BTCUSDT",d.iv,first-ms)]);KI=a;GB=INT.grid(a,b,d.pi0,d.pb0,first,ms,Date.now());
 R=INT.run(GB,d.pi0/d.pb0,d.amt,d.X);R.first=first;pi=pi||d.pi0;pb=pb||d.pb0;draw()}finally{loading=false}}
@@ -74,13 +76,13 @@ ${R.ent.map((e,i)=>`<p><span class="m">Step ${i+1}: ${q4(A/e)} INTER at</span>${
 <p><span class="m">Closed trades</span>${sg(R.bal-A)}</p><p><span class="m">Open position</span><b class="${cl(op)}">${sg(op)}</b></p>
 <p><span class="m">Winning / losing trades</span><b><span class="g">${W}</span> / <span class="r">${Ls}</span></b></p>
 <p><span class="m">Just holding INTER</span>${f(A*x/d.pi0)}</p>
-<p class="m">Signals use closed ${d.iv} bars. Fee 0.1% per side included. Slippage not included: INTER is thinly traded, so real fills may be worse. Not backtested.</p>`;
+<p class="m">Signals use closed ${d.iv} bars from ${INT.V[INT.ex].name}. Fee 0.1% per side included. Slippage not included: INTER is thinly traded, so real fills may be worse. Not backtested.</p>`;
 const jo=R.ev.map(e=>e.k).lastIndexOf("out"),rows=R.ev.map((e,j)=>{const t=new Date(e.t+INT.IV[d.iv][1]).toISOString().slice(5,16).replace("T"," ");
 const ty=e.k=="out"?"Close "+(e.side>0?"long (sell ":"short (buy back ")+q4(e.q)+" INTER)":(e.side>0?"Long (buy":"Short (sell")+(e.n>1?" step "+e.n:"")+" "+q4(e.q)+" INTER)";
 let rs="<td></td>";if(e.k=="out")rs=`<td class="${cl(e.pnl)}">${sg(e.pnl)} USDT (${sg(e.pnl/(e.n*A)*100)}%)</td>`;else if(j>jo&&R.side){const g=A/e.x*(L?x-e.x:e.x-x)-F*A-F*A*x/e.x;rs=`<td class="${cl(g)}">OPEN ${sg(g)} USDT (${sg(mvS(e.x,x)*100)}%)</td>`}
 return `<tr><td>${t}</td><td>${ty}</td><td>${pf(e.x)}</td><td>${sg(e.d)}%</td>${rs}</tr>`}).reverse().join("");
 $("tr").innerHTML="<tr><th>Time (UTC)</th><th>Action</th><th>INTER price</th><th>ΔR% that triggered it</th><th>Result</th></tr>"+(rows||"<tr><td colspan=5 class=m>No trades yet.</td></tr>");
-say(`Running since ${new Date(d.ts).toISOString().slice(5,16).replace("T"," ")} UTC. Updates every 3 seconds. ${R.ev.length} trade events so far.`)}
+say(`Data: ${INT.V[INT.ex].name}. Running since ${new Date(d.ts).toISOString().slice(5,16).replace("T"," ")} UTC. Updates every 3 seconds. ${R.ev.length} trade events so far.`)}
 $("go").onclick=start;$("rs").onclick=()=>{localStorage.removeItem(LS);location.reload()};
 if(localStorage[LS])go();
 </script></body></html>
