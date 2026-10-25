@@ -32,5 +32,5 @@ ${R.ent.map((e,i)=>`<p><span class="m">Step ${i+1}: ${q4(A/e)} BTC at</span>${f(
 <p><span class="m">Closed trades</span>${sg(R.eq-A)}</p><p><span class="m">Open position</span><b class="${cl(op)}">${sg(op)}</b></p>
 <p><span class="m">Winning / losing trades</span><b><span class="g">${W}</span> / <span class="r">${Ls}</span></b></p>
 <p><span class="m">Just holding BTC</span>${f(A*lp/d.p0)}</p>
-<p class="m">Rule: V = amount ÷ BTC price. V up ${f(X)}% from the previous signal = LONG, V down ${f(X)}% = SHORT; the reference resets at every signal. The x% is set automatically (volatility based, trained on the last 12 months). Decisions use closed ${d.iv} bars. Fee 0.1% included, slippage and funding not. Not backtested.</p>`;
+<p class="m">Rule: V = amount ÷ BTC price. V up ${f(X)}% from the previous signal = LONG, V down ${f(X)}% = SHORT; the reference resets at every signal. x% is the fixed value you entered. Decisions use closed ${d.iv} bars. Fee 0.1% included, slippage and funding not. Not backtested.</p>`;
 tbl();say(`Running since ${new Date(d.sh).toISOString().slice(5,16).replace("T"," ")} UTC. Updates about every 2 seconds. ${R.ev.length} trade events so far.`)}

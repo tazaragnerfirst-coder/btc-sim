@@ -19,25 +19,24 @@ section{padding:12px;overflow-x:auto}table{width:100%;border-collapse:collapse;m
 </style></head><body>
 <header><b>BTC/USDT formula simulator</b>
 <select id="mode" aria-label="Mode"><option value="1h">1 hour</option><option value="1m">1 minute</option></select>
+<input id="x" type="number" value="2" min="0.05" step="0.05" aria-label="x percent, fixed"><span class="m">x % (fixed)</span>
 <input id="amt" type="number" value="1000" min="1" aria-label="Start amount"><span class="m">USDT</span>
 <button id="go">Start</button><button id="rs">Reset</button></header>
 <div id="st">Enter a start amount and press Start. Simulation only, no real orders.</div>
 <main><div id="c"></div><aside id="pn"></aside></main>
 <section><table id="tr"></table></section>
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-<script src="sim.js?v=5"></script>
+<script src="sim.js?v=6"></script>
 <script>
-const $=i=>document.getElementById(i),LS="btcsim4",f=(x,n=2)=>x.toLocaleString("en",{minimumFractionDigits:n,maximumFractionDigits:n}),sg=x=>(x>=0?"+":"")+f(x),cl=x=>x>=0?"g":"r";
+const $=i=>document.getElementById(i),LS="btcsim5",f=(x,n=2)=>x.toLocaleString("en",{minimumFractionDigits:n,maximumFractionDigits:n}),sg=x=>(x>=0?"+":"")+f(x),cl=x=>x>=0?"g":"r";
 let d=null,K=[],R=null,live=0,ws=null;
 const say=t=>$("st").textContent=t;
 const ch=LightweightCharts.createChart($("c"),{autoSize:true,layout:{background:{color:"#0c1116"},textColor:"#9aa7b4"},grid:{vertLines:{color:"#161f28"},horzLines:{color:"#161f28"}},timeScale:{timeVisible:true,secondsVisible:false},rightPriceScale:{borderColor:"#1f2b36"}});
 const cs=ch.addCandlestickSeries({upColor:"#2ebd85",downColor:"#f6465d",borderVisible:false,wickUpColor:"#2ebd85",wickDownColor:"#f6465d"});
-async function start(){const amt=+$("amt").value,demo=$("mode").value=="1m";if(!(amt>0))return say("Enter a start amount above zero.");
-say("Loading 12 months of history to pick the rule setting...");try{const iv=demo?"1m":"1h",ms=demo?6e4:36e5,sc=demo?.05:1,W=SIM.W,sh=Math.floor(Date.now()/ms)*ms;
-const [tk,H]=await Promise.all([SIM.get("/api/v3/ticker/price?symbol=BTCUSDT"),SIM.klines(iv,ms,sh-(W+200)*ms)]);
-if(H.length<W+200)return say("Not enough history from Binance. Try again.");
-const t=SIM.train(H.map(x=>x.c),sc,W+199);d={iv,ms,sc,sh,p0:+tk.price,amt,c:t.c,md:t.md};localStorage[LS]=JSON.stringify(d);go()}catch(e){say("Could not start ("+(e&&e.message||e)+"). Check the connection and press Start again.")}}
-async function go(){d=d||JSON.parse(localStorage[LS]);$("amt").value=d.amt;$("mode").value=d.iv;$("mode").disabled=$("amt").disabled=true;$("go").disabled=true;
+async function start(){const amt=+$("amt").value,X=+$("x").value,demo=$("mode").value=="1m";if(!(amt>0&&X>0))return say("Enter a start amount and x% above zero.");
+say("Reading the BTC price...");try{const iv=demo?"1m":"1h",ms=demo?6e4:36e5,sh=Math.floor(Date.now()/ms)*ms;
+const tk=await SIM.get("/api/v3/ticker/price?symbol=BTCUSDT");d={iv,ms,sh,p0:+tk.price,amt,X};localStorage[LS]=JSON.stringify(d);go()}catch(e){say("Could not start ("+(e&&e.message||e)+"). Check the connection and press Start again.")}}
+async function go(){d=d||JSON.parse(localStorage[LS]);$("amt").value=d.amt;$("x").value=d.X;$("mode").value=d.iv;$("mode").disabled=$("amt").disabled=$("x").disabled=true;$("go").disabled=true;
 try{await load();connect()}catch(e){say("Could not load data. Reload the page to retry.")}}
 async function load(){K=await SIM.klines(d.iv,d.ms,d.sh-(200+SIM.VW)*d.ms);draw()}
 function draw(){R=SIM.series(K,d);cs.setData(K.map(x=>({time:x.t,open:x.o,high:x.h,low:x.l,close:x.c})));
@@ -47,4 +46,4 @@ ws.onmessage=async m=>{const k=JSON.parse(m.data).k;live=+k.c;cs.update({time:k.
 ws.onclose=()=>setTimeout(()=>d&&connect(),3000)}
 $("go").onclick=start;$("rs").onclick=()=>{localStorage.removeItem(LS);location.reload()};
 if(localStorage[LS])go();
-</script><script src="ui2.js?v=5"></script></body></html>
+</script><script src="ui2.js?v=6"></script></body></html>

@@ -14,9 +14,4 @@ for(let i=n;i<N;i++){const x=p[i],dv=(pr/x-1)*100,X=sa[i]*100,sg=dv>=X?1:dv<=-X?
 if(sg){if(side==0)en(i,x,sg,dv,"in");else if(side==sg){if(ent.length<3)en(i,x,sg,dv,"add")}else{ex(i,x,dv);en(i,x,sg,dv,"in")}pr=x;rl="previous signal"}
 out[i]=bal+(side?fl(x)-xf(x):0);rec[i]=side*ent.length}
 return{out,rec,ev,eq:bal,side,ent,pr,rl}};
-SIM.sa=(v,c,sc)=>v.map(x=>Math.min(.30*sc,Math.max(.02*sc,c*x/SIM.md)));
-SIM.train=(p,sc,k)=>{const v=SIM.vol(p),a=v.slice(200,k+1).sort((x,y)=>x-y),md=(a[(a.length-1)>>1]+a[a.length>>1])/2;let b=null;SIM.md=md;
-for(const c0 of SIM.S){const c=c0*sc,o=SIM.run(p,SIM.sa(v,c,sc),1).out;let mx=0,pk=0;for(let i=200;i<=k;i++){pk=Math.max(pk,o[i]);mx=Math.max(mx,1-o[i]/pk)}
-const s=Math.log(Math.max(o[k],1e-9))/(mx+.1);if(!b||s>b.s)b={s,c,md}}return b};
-
-SIM.series=(K,d)=>{SIM.md=d.md;const pf=K.map(x=>x.c);pf[SIM.VW+199]=d.p0;const p=pf.slice(SIM.VW),sa=SIM.sa(SIM.vol(pf).slice(SIM.VW),d.c,d.sc);return{p,sa,...SIM.run(p,sa,d.amt)}};
+SIM.series=(K,d)=>{const pf=K.map(x=>x.c);pf[SIM.VW+199]=d.p0;const p=pf.slice(SIM.VW),sa=new Array(p.length).fill(d.X/100);return{p,sa,...SIM.run(p,sa,d.amt)}};
