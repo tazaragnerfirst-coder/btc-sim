@@ -27,7 +27,7 @@ section{padding:12px;overflow-x:auto}table{width:100%;border-collapse:collapse;m
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <script src="sim.js"></script>
 <script>
-const $=i=>document.getElementById(i),LS="btcsim1",f=(x,n=2)=>x.toLocaleString("en",{minimumFractionDigits:n,maximumFractionDigits:n}),sg=x=>(x>=0?"+":"")+f(x),cl=x=>x>=0?"g":"r";
+const $=i=>document.getElementById(i),LS="btcsim2",f=(x,n=2)=>x.toLocaleString("en",{minimumFractionDigits:n,maximumFractionDigits:n}),sg=x=>(x>=0?"+":"")+f(x),cl=x=>x>=0?"g":"r";
 let d=null,K=[],R=null,live=0,ws=null;
 const say=t=>$("st").textContent=t;
 const ch=LightweightCharts.createChart($("c"),{autoSize:true,layout:{background:{color:"#0c1116"},textColor:"#9aa7b4"},grid:{vertLines:{color:"#161f28"},horzLines:{color:"#161f28"}},timeScale:{timeVisible:true,secondsVisible:false},rightPriceScale:{borderColor:"#1f2b36"}});
@@ -43,24 +43,7 @@ try{await load();connect()}catch(e){say("Could not load data. Reload the page to
 async function load(){K=await SIM.klines(d.iv,d.ms,d.sh-(200+SIM.VW)*d.ms);draw()}
 function draw(){R=SIM.series(K,d);cs.setData(K.map(x=>({time:x.t,open:x.o,high:x.h,low:x.l,close:x.c})));
 const a=[];let s=0;K.forEach((x,i)=>{s+=x.c;if(i>=200)s-=K[i-200].c;if(i>=199)a.push({time:x.t,value:s/200})});sm.setData(a);
-const mk=[{time:K[SIM.VW+199].t,position:"inBar",shape:"circle",color:"#f0b90b",text:"START "+f(d.p0,0)}];
-R.ev.forEach(e=>{const t=K[SIM.VW+e.i].t;if(e.k=="out")mk.push({time:t,position:e.side>0?"aboveBar":"belowBar",shape:"circle",color:e.pnl>=0?"#2ebd85":"#f6465d",text:"EXIT "+sg(e.pnl*d.amt)});
-else mk.push({time:t,position:e.side>0?"belowBar":"aboveBar",shape:e.side>0?"arrowUp":"arrowDown",color:e.side>0?"#2ebd85":"#f6465d",text:(e.side>0?"BUY":"SELL")+(e.n>1?" +"+e.n:"")})});
-cs.setMarkers(mk);table();panel()}
-function table(){const rows=R.ev.slice().reverse().map(e=>{const t=new Date((K[SIM.VW+e.i].t+d.ms/1000)*1e3).toISOString().slice(5,16).replace("T"," ");
-const ty=e.k=="out"?"Close "+(e.side>0?"long":"short"):(e.side>0?"Buy":"Sell")+(e.n>1?" step "+e.n:"");
-return `<tr><td>${t}</td><td>${ty}</td><td>${f(e.x)}</td><td class="${e.k=="out"?cl(e.pnl):""}">${e.k=="out"?sg(e.pnl*d.amt)+" USDT ("+sg(e.pnl*100)+"%)":""}</td></tr>`}).join("");
-$("tr").innerHTML="<tr><th>Time (UTC)</th><th>Action</th><th>Price</th><th>Result</th></tr>"+rows}
-function panel(){if(!R)return;const lp=live||K[K.length-1].c,u=R.side?R.ent.reduce((a,e)=>a+(R.side>0?lp/e-1:e/lp-1),0)/3:0,val=d.amt*R.eq*(1+u),pl=val-d.amt,sa=R.sa[R.sa.length-1],sma=K.slice(-200).reduce((a,x)=>a+x.c,0)/200,up=lp>sma;
-$("pn").innerHTML=`<h3 class="${R.side>0?"g":R.side<0?"r":"m"}">${R.side?(R.side>0?"Long ":"Short ")+R.ent.length+"/3":"Flat"}</h3>
-<p><span class="m">BTC price</span><b>${f(lp)}</b></p><p><span class="m">Start</span>${f(d.amt)} at ${f(d.p0)}</p>
-<p><span class="m">Equity</span><b class="${cl(pl)}">${f(val)}</b></p><p><span class="m">Profit / loss</span><b class="${cl(pl)}">${sg(pl)} (${sg(pl/d.amt*100)}%)</b></p>
-<p><span class="m">Closed trades</span>${sg(d.amt*(R.eq-1))}</p><p><span class="m">Open position</span>${sg(d.amt*R.eq*u)}</p>
-<p><span class="m">Just holding BTC</span>${f(d.amt*lp/d.p0)}</p>
-<p><span class="m">Trigger move</span>${f(sa*100)}%</p><p><span class="m">Price vs SMA200</span>${up?"above, longs only":"below, shorts only"}</p>
-${R.ent.map((e,i)=>`<p><span class="m">Step ${i+1} entry</span>${f(e)}</p>`).join("")}
-<p class="m">${d.iv=="1m"?"DEMO: 1 minute bars were never backtested.":"Decisions use hourly closes, as in the backtest."} Fee 0.1% included, slippage and funding not.</p>`;
-say(`Running since ${new Date(d.sh).toISOString().slice(5,16).replace("T"," ")} UTC. Chart and profit update about every 2 seconds. ${R.ev.length?"":"No trades yet: waiting for a move of "+f(sa*100)+"% in the allowed direction."}`)}
+table();panel()}
 function connect(){if(ws)ws.close();ws=new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@kline_${d.iv}`);
 ws.onmessage=async m=>{const k=JSON.parse(m.data).k;live=+k.c;cs.update({time:k.t/1000,open:+k.o,high:+k.h,low:+k.l,close:+k.c});if(k.x){try{await load()}catch(e){}}else panel()};
 ws.onclose=()=>setTimeout(()=>d&&connect(),3000)}
