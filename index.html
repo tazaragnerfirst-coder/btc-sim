@@ -66,4 +66,4 @@ ws.onmessage=async m=>{const k=JSON.parse(m.data).k;live=+k.c;cs.update({time:k.
 ws.onclose=()=>setTimeout(()=>d&&connect(),3000)}
 $("go").onclick=start;$("rs").onclick=()=>{localStorage.removeItem(LS);location.reload()};
 if(localStorage[LS])go();
-</script></body></html>
+</script><script src="ui2.js"></script></body></html>
