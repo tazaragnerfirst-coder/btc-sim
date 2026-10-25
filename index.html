@@ -36,7 +36,7 @@ async function start(){const amt=+$("amt").value,demo=$("mode").value=="1m";if(!
 say("Loading 12 months of history to pick the rule setting...");try{const iv=demo?"1m":"1h",ms=demo?6e4:36e5,sc=demo?.05:1,W=SIM.W,sh=Math.floor(Date.now()/ms)*ms;
 const [tk,H]=await Promise.all([SIM.get("/api/v3/ticker/price?symbol=BTCUSDT"),SIM.klines(iv,ms,sh-(W+200)*ms)]);
 if(H.length<W+200)return say("Not enough history from Binance. Try again.");
-const t=SIM.train(H.map(x=>x.c),sc,W+199);d={iv,ms,sc,sh,p0:+tk.price,amt,c:t.c,md:t.md};localStorage[LS]=JSON.stringify(d);go()}catch(e){say("Could not reach Binance. Check the connection and press Start again.")}}
+const t=SIM.train(H.map(x=>x.c),sc,W+199);d={iv,ms,sc,sh,p0:+tk.price,amt,c:t.c,md:t.md};localStorage[LS]=JSON.stringify(d);go()}catch(e){say("Could not start ("+(e&&e.message||e)+"). Check the connection and press Start again.")}}
 async function go(){d=d||JSON.parse(localStorage[LS]);$("amt").value=d.amt;$("mode").value=d.iv;$("mode").disabled=$("amt").disabled=true;$("go").disabled=true;
 try{await load();connect()}catch(e){say("Could not load data. Reload the page to retry.")}}
 async function load(){K=await SIM.klines(d.iv,d.ms,d.sh-(200+SIM.VW)*d.ms);draw()}
